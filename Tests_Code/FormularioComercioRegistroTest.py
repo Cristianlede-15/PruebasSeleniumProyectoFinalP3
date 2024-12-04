@@ -7,7 +7,6 @@ import os
 import shutil
 import stat
 
-# Function to take full-page screenshots
 def take_full_page_screenshot(driver, file_path):
     original_size = driver.get_window_size()
     required_width = driver.execute_script('return document.body.parentNode.scrollWidth')
@@ -16,97 +15,120 @@ def take_full_page_screenshot(driver, file_path):
     driver.save_screenshot(file_path)
     driver.set_window_size(original_size['width'], original_size['height'])
 
-# Path for screenshots directory
+def generate_html_report(events, output_file):
+    with open(output_file, 'w') as f:
+        f.write('<html><head><title>Reporte de Formulario Comercio Registro Test</title></head><body>')
+        f.write('<h1>Reporte de Formulario Comercio Registro Test</h1>')
+        for event in events:
+            if "An error occurred" not in event:
+                f.write(f'<p>{event}</p>')
+        f.write('</body></html>')
+
+def remove_readonly(func, path, _):
+    os.chmod(path, stat.S_IWRITE)
+    func(path)
+
+def get_screenshot_filename(step_number):
+    return os.path.join(form_registro_test_dir, f'Captura{step_number}.png')
+
 screenshots_dir = r'C:\Users\pc\OneDrive - Instituto Tecnológico de Las Américas (ITLA)\Desktop\TareaSeleniumP3\screenshots'
 
-# Create the screenshots directory if it doesn't exist
 os.makedirs(screenshots_dir, exist_ok=True)
 
-# Path for FormRegistroTest directory
 form_registro_test_dir = os.path.join(screenshots_dir, 'FormRegistroTest')
 
-# Remove FormRegistroTest directory if it exists
 if os.path.exists(form_registro_test_dir):
-    # Change the permissions of the directory
-    for root, dirs, files in os.walk(form_registro_test_dir):
-        for dir in dirs:
-            os.chmod(os.path.join(root, dir), stat.S_IWUSR)
-        for file in files:
-            os.chmod(os.path.join(root, file), stat.S_IWUSR)
-    shutil.rmtree(form_registro_test_dir)
+    shutil.rmtree(form_registro_test_dir, onerror=remove_readonly)
 
-# Create FormRegistroTest directory
-os.makedirs(form_registro_test_dir)
+os.makedirs(form_registro_test_dir, exist_ok=True)
 
-# Initialize the WebDriver
 driver = webdriver.Chrome()
 
-# Maximize the browser window
+events = []
+step_number = 1
 
 try:
-    # Step 1: Open the login page
     driver.get('http://localhost:3000/auth/login')
-    take_full_page_screenshot(driver, os.path.join(form_registro_test_dir, 'step1_login_page.png'))
+    events.append("Login page loaded successfully.")
+    take_full_page_screenshot(driver, get_screenshot_filename(step_number))
+    step_number += 1
 
-    # Step 2: Click on "Registrar comercio"
     register_link = driver.find_element(By.LINK_TEXT, 'Registrar comercio')
     register_link.click()
-    take_full_page_screenshot(driver, os.path.join(form_registro_test_dir, 'step2_register_page.png'))
+    events.append("Register page loaded successfully.")
+    take_full_page_screenshot(driver, get_screenshot_filename(step_number))
+    step_number += 1
 
-    # Step 3: Fill out the registration form
     driver.find_element(By.ID, 'business_name').send_keys('Comedor Maria')
-    take_full_page_screenshot(driver, os.path.join(form_registro_test_dir, 'step3_business_name.png'))
+    events.append("Business name entered successfully.")
+    take_full_page_screenshot(driver, get_screenshot_filename(step_number))
+    step_number += 1
 
     driver.find_element(By.ID, 'phone').send_keys('+1 809-888-9999')
-    take_full_page_screenshot(driver, os.path.join(form_registro_test_dir, 'step4_phone.png'))
+    events.append("Phone entered successfully.")
+    take_full_page_screenshot(driver, get_screenshot_filename(step_number))
+    step_number += 1
 
-    driver.find_element(By.ID, 'email').send_keys('setitay970@nausard.com')
-    take_full_page_screenshot(driver, os.path.join(form_registro_test_dir, 'step5_email.png'))
+    driver.find_element(By.ID, 'email').send_keys('ComedorMaria57865@nausard.com')
+    events.append("Email entered successfully.")
+    take_full_page_screenshot(driver, get_screenshot_filename(step_number))
+    step_number += 1
 
     driver.find_element(By.ID, 'logo').send_keys(r'C:\Users\pc\Downloads\logorestaurante.webp')
-    take_full_page_screenshot(driver, os.path.join(form_registro_test_dir, 'step6_logo.png'))
+    events.append("Logo uploaded successfully.")
+    take_full_page_screenshot(driver, get_screenshot_filename(step_number))
+    step_number += 1
 
-    # Step 4: Set opening and closing times using JavaScript
     driver.execute_script("document.getElementById('opening_time').value = '08:00'")
-    take_full_page_screenshot(driver, os.path.join(form_registro_test_dir, 'step7_opening_time.png'))
+    events.append("Opening time entered successfully.")
+    take_full_page_screenshot(driver, get_screenshot_filename(step_number))
+    step_number += 1
 
     driver.execute_script("document.getElementById('closing_time').value = '21:00'")
-    take_full_page_screenshot(driver, os.path.join(form_registro_test_dir, 'step8_closing_time.png'))
+    events.append("Closing time entered successfully.")
+    take_full_page_screenshot(driver, get_screenshot_filename(step_number))
+    step_number += 1
 
-    # Step 5: Select business type
     business_type_element = driver.find_element(By.ID, 'business_type')
     options = business_type_element.find_elements(By.TAG_NAME, 'option')
     for option in options:
         print('Available option:', option.text)
-    take_full_page_screenshot(driver, os.path.join(form_registro_test_dir, 'step9_business_type_options.png'))
+    events.append("Business type options displayed successfully.")
+    take_full_page_screenshot(driver, get_screenshot_filename(step_number))
+    step_number += 1
 
-    # Initialize Select class
     business_type = Select(business_type_element)
-    # Use the exact text from the options printed
-    business_type.select_by_visible_text('Restaurantes')  # Adjust if necessary
-    take_full_page_screenshot(driver, os.path.join(form_registro_test_dir, 'step10_business_type_selected.png'))
+    business_type.select_by_visible_text('Restaurantes')
+    events.append("Business type selected successfully.")
+    take_full_page_screenshot(driver, get_screenshot_filename(step_number))
+    step_number += 1
 
-    # Step 6: Enter password
     driver.find_element(By.ID, 'password').send_keys('2233')
-    take_full_page_screenshot(driver, os.path.join(form_registro_test_dir, 'step11_password.png'))
+    events.append("Password entered successfully.")
+    take_full_page_screenshot(driver, get_screenshot_filename(step_number))
+    step_number += 1
 
     driver.find_element(By.ID, 'confirm_password').send_keys('2233')
-    take_full_page_screenshot(driver, os.path.join(form_registro_test_dir, 'step12_confirm_password.png'))
+    events.append("Confirm password entered successfully.")
+    take_full_page_screenshot(driver, get_screenshot_filename(step_number))
+    step_number += 1
 
-    # Step 7: Submit the form
     driver.find_element(By.XPATH, "//button[text()='Registrar Comercio']").click()
-    take_full_page_screenshot(driver, os.path.join(form_registro_test_dir, 'step13_form_submitted.png'))
+    events.append("Form submitted successfully.")
+    take_full_page_screenshot(driver, get_screenshot_filename(step_number))
+    step_number += 1
 
-    # Wait for response
     time.sleep(5)
-    take_full_page_screenshot(driver, os.path.join(form_registro_test_dir, 'step14_registration_result.png'))
-
-    # Add assertions here if needed
+    events.append("Registration result loaded successfully.")
+    take_full_page_screenshot(driver, get_screenshot_filename(step_number))
+    step_number += 1
 
 except Exception as e:
-    print('An error occurred:', e)
+    events.append("An error occurred")
     take_full_page_screenshot(driver, os.path.join(form_registro_test_dir, 'error.png'))
 
 finally:
-    # Close the browser
-    driver.quit()
+    if is_window_open(driver):
+        driver.quit()
+
+generate_html_report(events, os.path.join(form_registro_test_dir, 'report.html'))
